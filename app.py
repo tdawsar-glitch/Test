@@ -52,9 +52,9 @@ col2.metric("Latest Open", f"${latest_open:,.2f}")
 col3.metric("Latest Volume", f"{latest_volume:,}")
 
 st.subheader("Price History")
-data["SMA 20"] = data["Close"].rolling(window=20).mean()
-data["SMA 50"] = data["Close"].rolling(window=50).mean()
-data["SMA 200"] = data["Close"].rolling(window=200).mean()
+data["SMA 20"] = data["Close"].rolling(window=20, min_periods=1).mean()
+data["SMA 50"] = data["Close"].rolling(window=50, min_periods=1).mean()
+data["SMA 200"] = data["Close"].rolling(window=200, min_periods=1).mean()
 st.line_chart(data[["Open", "Close", "SMA 20", "SMA 50", "SMA 200"]])
 
 st.subheader("MACD")

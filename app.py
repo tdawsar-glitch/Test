@@ -5,7 +5,7 @@ import streamlit as st
 
 from stock_dashboard import config
 from stock_dashboard.data_loader import load_price_data
-from stock_dashboard.indicators import build_indicators
+from stock_dashboard.indicators import build_indicators, generate_trading_signals
 
 st.set_page_config(page_title="Stock Indicator Dashboard", layout="wide")
 
@@ -60,6 +60,11 @@ st.subheader("Price History")
 indicator_data = build_indicators(data)
 price_columns = ["Open", "Close", "SMA 20", "SMA 50", "SMA 200"]
 st.line_chart(indicator_data[price_columns])
+
+st.subheader("Trading Signals")
+signals = generate_trading_signals(indicator_data)
+for signal in signals:
+    st.markdown(f"**{signal['title']}**: {signal['summary']}")
 
 st.subheader("MACD")
 st.line_chart(indicator_data[["MACD", "Signal"]])

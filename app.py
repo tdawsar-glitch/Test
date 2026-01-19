@@ -2,23 +2,31 @@ import datetime as dt
 
 import pandas as pd
 import streamlit as st
-import yfinance as yf
 
-st.set_page_config(page_title="SPY Stock Dashboard", layout="wide")
+from stock_dashboard import config
+from stock_dashboard.data_loader import load_price_data
+from stock_dashboard.indicators import build_indicators
 
-st.title("SPY Stock Dashboard")
+st.set_page_config(page_title="Stock Indicator Dashboard", layout="wide")
+
+st.title("Stock Indicator Dashboard")
 st.caption("Powered by yfinance")
 
 st.sidebar.header("Controls")
+selected_ticker = st.sidebar.selectbox(
+    "Ticker",
+    config.SUPPORTED_TICKERS,
+    index=config.SUPPORTED_TICKERS.index(config.DEFAULT_TICKER),
+)
 end_date = st.sidebar.date_input("End date", dt.date.today())
 start_date = st.sidebar.date_input(
     "Start date",
-    end_date - dt.timedelta(days=365),
+    end_date - dt.timedelta(days=config.DEFAULT_LOOKBACK_DAYS),
     max_value=end_date,
 )
 interval = st.sidebar.selectbox(
     "Interval",
-    ["1d", "1wk", "1mo"],
+    config.INTERVAL_OPTIONS,
     index=0,
 )
 
@@ -28,15 +36,12 @@ if start_date > end_date:
 
 
 @st.cache_data(show_spinner=False)
-def load_spy_data(start: dt.date, end: dt.date, interval_value: str):
-    return yf.download("SPY", start=start, end=end + dt.timedelta(days=1), interval=interval_value)
+def load_ticker_data(ticker: str, start: dt.date, end: dt.date, interval_value: str) -> pd.DataFrame:
+    return load_price_data(ticker, start, end, interval_value)
 
 
-with st.spinner("Loading SPY data..."):
-    data = load_spy_data(start_date, end_date, interval)
-
-if isinstance(data.columns, pd.MultiIndex):
-    data.columns = data.columns.get_level_values(0)
+with st.spinner(f"Loading {selected_ticker} data..."):
+    data = load_ticker_data(selected_ticker, start_date, end_date, interval)
 
 if data.empty:
     st.warning("No data returned for the selected date range.")
@@ -52,19 +57,16 @@ col2.metric("Latest Open", f"${latest_open:,.2f}")
 col3.metric("Latest Volume", f"{latest_volume:,}")
 
 st.subheader("Price History")
-data["SMA 20"] = data["Close"].rolling(window=20, min_periods=1).mean()
-data["SMA 50"] = data["Close"].rolling(window=50, min_periods=1).mean()
-data["SMA 200"] = data["Close"].rolling(window=200, min_periods=1).mean()
-st.line_chart(data[["Open", "Close", "SMA 20", "SMA 50", "SMA 200"]])
+indicator_data = build_indicators(data)
+price_columns = ["Open", "Close", "SMA 20", "SMA 50", "SMA 200"]
+st.line_chart(indicator_data[price_columns])
 
 st.subheader("MACD")
-exp12 = data["Close"].ewm(span=12, adjust=False).mean()
-exp26 = data["Close"].ewm(span=26, adjust=False).mean()
-data["MACD"] = exp12 - exp26
-data["Signal"] = data["MACD"].ewm(span=9, adjust=False).mean()
-data["Histogram"] = data["MACD"] - data["Signal"]
-st.line_chart(data[["MACD", "Signal"]])
-st.bar_chart(data["Histogram"])
+st.line_chart(indicator_data[["MACD", "Signal"]])
+st.bar_chart(indicator_data["Histogram"])
+
+st.subheader("RSI")
+st.line_chart(indicator_data["RSI"])
 
 st.subheader("Raw Data")
-st.dataframe(data, use_container_width=True)
+st.dataframe(indicator_data, use_container_width=True)

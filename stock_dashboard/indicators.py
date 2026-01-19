@@ -1,9 +1,11 @@
 """Technical indicator calculations."""
 
+from typing import Dict, List
+
 import pandas as pd
 
 
-def add_sma(data: pd.DataFrame, windows: list[int]) -> pd.DataFrame:
+def add_sma(data: pd.DataFrame, windows: List[int]) -> pd.DataFrame:
     result = data.copy()
     for window in windows:
         result[f"SMA {window}"] = result["Close"].rolling(window=window, min_periods=1).mean()
@@ -40,6 +42,7 @@ def build_indicators(data: pd.DataFrame) -> pd.DataFrame:
     return result
 
 
+def generate_trading_signals(indicator_data: pd.DataFrame) -> List[Dict[str, str]]:
 def generate_trading_signals(indicator_data: pd.DataFrame) -> list[dict]:
     """Create two trading signals based on RSI and MACD."""
     latest = indicator_data.iloc[-1]

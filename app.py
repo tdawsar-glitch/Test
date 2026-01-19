@@ -1,5 +1,6 @@
 import datetime as dt
 
+import pandas as pd
 import streamlit as st
 import yfinance as yf
 
@@ -33,6 +34,9 @@ def load_spy_data(start: dt.date, end: dt.date, interval_value: str):
 
 with st.spinner("Loading SPY data..."):
     data = load_spy_data(start_date, end_date, interval)
+
+if isinstance(data.columns, pd.MultiIndex):
+    data.columns = data.columns.get_level_values(0)
 
 if data.empty:
     st.warning("No data returned for the selected date range.")

@@ -52,7 +52,19 @@ col2.metric("Latest Open", f"${latest_open:,.2f}")
 col3.metric("Latest Volume", f"{latest_volume:,}")
 
 st.subheader("Price History")
-st.line_chart(data[["Open", "Close"]])
+data["SMA 20"] = data["Close"].rolling(window=20).mean()
+data["SMA 50"] = data["Close"].rolling(window=50).mean()
+data["SMA 200"] = data["Close"].rolling(window=200).mean()
+st.line_chart(data[["Open", "Close", "SMA 20", "SMA 50", "SMA 200"]])
+
+st.subheader("MACD")
+exp12 = data["Close"].ewm(span=12, adjust=False).mean()
+exp26 = data["Close"].ewm(span=26, adjust=False).mean()
+data["MACD"] = exp12 - exp26
+data["Signal"] = data["MACD"].ewm(span=9, adjust=False).mean()
+data["Histogram"] = data["MACD"] - data["Signal"]
+st.line_chart(data[["MACD", "Signal"]])
+st.bar_chart(data["Histogram"])
 
 st.subheader("Raw Data")
 st.dataframe(data, use_container_width=True)
